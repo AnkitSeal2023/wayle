@@ -263,6 +263,19 @@ One of: `"transparent"`, `"auto"`.
 
 String matching `^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`.
 
+## CustomDropdownItem {#custom-dropdown-item}
+
+One row of a custom dropdown panel.
+
+| Field | Description |
+|---|---|
+| `label` | Primary text shown for the item. |
+| `icon` | Leading symbolic icon name. |
+| `subtitle` | Secondary description below the label. |
+| `command` | Shell command executed when the item is clicked. |
+| `active` | Shows a check mark on the trailing edge, marking the current choice. |
+| `class` | Extra CSS class added to the row for theme-specific styling. |
+
 ## CyclingInterval {#cycling-interval}
 
 Cycling interval in minutes, minimum 1.

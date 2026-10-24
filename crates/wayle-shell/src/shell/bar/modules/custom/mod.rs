@@ -125,7 +125,7 @@ impl Component for CustomModule {
                 watchers::run_definition_command(&sender, &definition, command_token.reset());
             }
             ExecutionMode::Watch => {
-                watchers::spawn_command_watcher(&sender, &definition, watcher_token.reset());
+                watchers::run_command_watcher(&sender, &definition, watcher_token.reset());
             }
         }
         watchers::spawn_config_watcher(&sender, custom_modules, definition.id.clone());
