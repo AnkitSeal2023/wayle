@@ -1,3 +1,4 @@
+## Wayle shell with Custom dropdowns
 <p align="center">
   <img src="assets/wayle.svg" width="200" alt="Wayle">
 </p>
