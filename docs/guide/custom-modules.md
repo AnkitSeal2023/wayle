@@ -174,4 +174,80 @@ For state with no event source (CPU temp, disk usage, weather), poll mode is the
 
 Every field of `[[modules.custom]]` is listed at [`/config/modules/custom`](/config/modules/custom).
 
+## Custom dropdowns
+
+Dropdown panels are defined the same way as custom modules, under `[[modules.dropdowns]]`. Each panel has a unique `id` and is opened from **any** module's click action with `dropdown:<id>` — built-in modules included:
+
+```toml
+[[bar.layout]]
+monitor = "*"
+left = ["custom-launcher"]
+
+[[modules.custom]]
+id = "launcher"
+icon-name = "ld-grid-2x2-symbolic"
+
+[[modules.dropdowns]]
+id = "menu"
+title = "Quick actions"
+icon = "ld-settings-symbolic"
+width = 320
+
+[[modules.dropdowns.items]]
+label = "Terminal"
+icon = "ld-terminal-symbolic"
+subtitle = "foot"
+command = "foot"
+
+[[modules.dropdowns.items]]
+label = "Browser"
+icon = "ld-globe-symbolic"
+command = "firefox"
+```
+
+`left-click = "dropdown:menu"` on any module (custom or built-in) opens the panel anchored to that module. Clicking an item runs its `command`; the panel closes afterward unless `close-on-click = false` on the dropdown.
+
+### Command-driven panels
+
+For dynamic content, set a `command` — its output replaces the static items. The command follows the same `sh -c` / 30s-timeout rules as custom modules, and in `poll` mode runs every `interval-ms` (5000 default); in `watch` mode each stdout line is one complete panel payload.
+
+```toml
+[[modules.dropdowns]]
+id = "workspaces"
+mode = "watch"
+command = "somewm-emit-cursor-menu"
+close-on-click = false
+```
+
+JSON output describes the whole panel:
+
+```json
+{
+  "title": "Workspaces",
+  "icon": "ld-layout-dashboard-symbolic",
+  "width": 280,
+  "items": [
+    { "label": "Move to 1", "icon": "ld-hash-symbolic", "command": "somewm-send 1" },
+    { "label": "Follow here", "active": true, "class": "chosen" }
+  ]
+}
+```
+
+| Field  | Effect                                                    |
+| ------ | --------------------------------------------------------- |
+| `title`| Header title (overrides `title` from config)              |
+| `icon` | Header icon (overrides `icon` from config)                |
+| `width`| Panel width in pixels (1–8192)                            |
+| `items`| Rows: objects with `label`, `icon`, `subtitle`, `command`, `active`, `class` — or plain strings |
+
+While a command hasn't produced output yet, the static `items` show. Empty output clears the panel; malformed JSON falls back to plain-text parsing (each non-empty line becomes a label-only row). Output is capped at 64 KB and 100 items.
+
+### Behavior notes
+
+- Config edits to a dropdown apply live to the open-or-cached panel; removing the definition while the panel instance still exists shows a "Dropdown removed" state until the cache reclaims it.
+- Panel widths and heights are scaled by `styling.scale`.
+- Built-in dropdown names (e.g. `dropdown:audio`) always win over user-defined ids — pick a distinct id.
+
+Every field of `[[modules.dropdowns]]` is listed at [`/config/dropdowns`](/config/dropdowns).
+
 </div>

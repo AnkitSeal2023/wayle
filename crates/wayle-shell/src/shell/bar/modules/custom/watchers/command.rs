@@ -1,15 +1,16 @@
-use std::{process::Stdio, time::Duration};
+//! Command execution for custom bar modules.
+//!
+//! Wraps the shared plumbing in [`crate::watchers::commands`], mapping the
+//! outcomes into [`CustomCmd`] messages.
 
 use relm4::ComponentSender;
-use tokio::{process::Command, time::timeout};
 use tokio_util::sync::CancellationToken;
-use tracing::warn;
 use wayle_config::schemas::modules::CustomModuleDefinition;
 
 use super::super::{CustomModule, messages::CustomCmd};
+use crate::watchers::{ExecOutcome, report_outcome, run_command_oneshot, spawn_watch_supervisor};
 
-const COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
-
+/// Runs the definition's command once, feeding [`CustomCmd::CommandOutput`].
 pub(crate) fn run_definition_command(
     sender: &ComponentSender<CustomModule>,
     definition: &CustomModuleDefinition,
@@ -32,59 +33,42 @@ pub(crate) fn run_command_async(
     command: String,
     cancel_token: CancellationToken,
 ) {
-    let module_id = module_id.to_string();
-    sender.oneshot_command(async move {
-        let outcome = tokio::select! {
-            biased;
-            () = cancel_token.cancelled() => ExecOutcome::Cancelled,
-            result = timeout(COMMAND_TIMEOUT, run_command(&command)) => match result {
-                Ok(Ok(output)) => ExecOutcome::Output(output),
-                Ok(Err(error)) => ExecOutcome::Failed(error),
-                Err(_) => ExecOutcome::TimedOut,
-            },
-        };
-
-        map_exec_outcome(&module_id, outcome)
-    });
+    run_command_oneshot(sender, module_id, command, cancel_token, map_exec_outcome);
 }
 
-enum ExecOutcome {
-    Output(String),
-    Cancelled,
-    TimedOut,
-    Failed(std::io::Error),
+/// Spawns the definition's long-running watch command under the shared
+/// restart-aware supervisor ([`spawn_watch_supervisor`]).
+///
+/// On each exit the policy is checked: `Never` stops unconditionally,
+/// `OnFailure` stops on clean exits, and `OnExit` always restarts.
+/// Before restarting, the loop waits the user-configured
+/// `restart-interval-ms`. Each stdout line produces one
+/// [`CustomCmd::WatchOutput`] payload.
+pub(crate) fn run_command_watcher(
+    sender: &ComponentSender<CustomModule>,
+    definition: &CustomModuleDefinition,
+    token: CancellationToken,
+) {
+    let Some(command) = definition.command.clone() else {
+        return;
+    };
+
+    spawn_watch_supervisor(
+        sender,
+        definition.id.clone(),
+        command,
+        definition.restart_policy,
+        definition.restart_interval_ms.value(),
+        token,
+        |_surface_id, line| CustomCmd::WatchOutput(line),
+    );
 }
 
 fn map_exec_outcome(module_id: &str, outcome: ExecOutcome) -> CustomCmd {
-    match outcome {
-        ExecOutcome::Output(output) => CustomCmd::CommandOutput(output),
-        ExecOutcome::Cancelled => CustomCmd::CommandCancelled,
-        ExecOutcome::TimedOut => {
-            warn!(
-                module_id = %module_id,
-                timeout_secs = COMMAND_TIMEOUT.as_secs(),
-                "command timed out"
-            );
-            CustomCmd::CommandCancelled
-        }
-        ExecOutcome::Failed(error) => {
-            warn!(module_id = %module_id, error = %error, "command execution failed");
-            CustomCmd::CommandCancelled
-        }
+    match report_outcome(module_id, outcome) {
+        Some(output) => CustomCmd::CommandOutput(output),
+        None => CustomCmd::CommandCancelled,
     }
-}
-
-async fn run_command(command: &str) -> Result<String, std::io::Error> {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(command)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .kill_on_drop(true)
-        .output()
-        .await?;
-
-    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
 #[cfg(test)]

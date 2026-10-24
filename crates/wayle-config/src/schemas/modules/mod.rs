@@ -7,6 +7,7 @@ mod cava;
 mod clock;
 mod cpu;
 mod custom;
+mod custom_dropdown;
 mod dashboard;
 mod hyprland_workspaces;
 mod hyprsunset;
@@ -41,6 +42,7 @@ pub use cava::{
 pub use clock::ClockConfig;
 pub use cpu::CpuConfig;
 pub use custom::{CustomModuleDefinition, ExecutionMode, RestartDelay, RestartPolicy};
+pub use custom_dropdown::{CustomDropdownDefinition, CustomDropdownItem};
 pub use dashboard::DashboardConfig;
 pub use hyprland_workspaces::{
     ActiveIndicator, DisplayMode, HyprlandWorkspacesConfig, Numbering, UrgentMode, WorkspaceStyle,
@@ -164,4 +166,26 @@ pub struct ModulesConfig {
     /// ```
     #[default(Vec::new())]
     pub custom: ConfigProperty<Vec<CustomModuleDefinition>>,
+    /// Custom user-defined dropdown panels, opened by any module's click
+    /// action via `dropdown:<id>`. See [`CustomDropdownDefinition`] for all
+    /// fields (id, title, icon, command, items, etc.).
+    ///
+    /// Panels are either static (declared with `items`) or driven by a shell
+    /// `command`, whose output replaces the static items.
+    ///
+    /// ## Example
+    ///
+    /// ```toml
+    /// [[modules.dropdowns]]
+    /// id = "menu"
+    /// title = "Quick actions"
+    /// icon = "ld-settings-symbolic"
+    ///
+    /// [[modules.dropdowns.items]]
+    /// label = "Terminal"
+    /// icon = "ld-terminal-symbolic"
+    /// command = "foot"
+    /// ```
+    #[default(Vec::new())]
+    pub dropdowns: ConfigProperty<Vec<CustomDropdownDefinition>>,
 }

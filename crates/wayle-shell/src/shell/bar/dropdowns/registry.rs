@@ -12,6 +12,7 @@ use tracing::{debug, warn};
 use wayle_config::{ClickAction, schemas::bar::Location};
 use wayle_widgets::prelude::{BarButton, BarButtonInput};
 
+use super::custom;
 use crate::{process, shell::services::ShellServices};
 
 /// Returns `value` unchanged, logging at debug if it is `None`.
@@ -387,11 +388,12 @@ impl DropdownRegistry {
         }
 
         debug!(dropdown = name, "creating dropdown");
-        let Some(raw) = super::create(name, &self.services) else {
-            debug!(
+        let Some(raw) = super::create(name, &self.services)
+            .or_else(|| custom::create_for_id(name, &self.services))
+        else {
+            warn!(
                 dropdown = name,
-                "no instance created (factory declined, usually due to a missing service or dependency \
-                 -- see preceding debug log from the factory for the specific cause)"
+                "no dropdown exists: not a built-in name and matches no [[modules.dropdowns]] id"
             );
             return None;
         };

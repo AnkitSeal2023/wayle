@@ -1,4 +1,5 @@
 mod color_extractor;
+mod commands;
 mod css;
 mod location;
 mod monitors;
@@ -12,6 +13,9 @@ mod weather;
 use std::env;
 
 pub(crate) use color_extractor::build_extractor_config;
+pub(crate) use commands::{
+    ExecOutcome, report_outcome, run_command_oneshot, spawn_poller, spawn_watch_supervisor,
+};
 use relm4::ComponentSender;
 use wayle_styling::watcher as user_style;
 

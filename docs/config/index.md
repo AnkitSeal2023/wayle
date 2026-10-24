@@ -18,6 +18,7 @@ Editor intellisense via JSON Schema. Install [Tombi](https://marketplace.visuals
 | Section | What it controls |
 |---|---|
 | [`bar`](/config/bar) | Bar chrome: per-monitor layout, spacing, colors, and button styling. |
+| [`dropdowns`](/config/dropdowns) | User-defined dropdown panel opened by any module's click action. |
 | [`general`](/config/general) | Shell-wide settings that don't belong to any specific module. |
 | [`osd`](/config/osd) | On-screen display overlay for transient events like volume and brightness. |
 | [`styling`](/config/styling) | Theme, palette, and rounding tokens applied shell-wide. Changes recompile the stylesheet. |

@@ -92,11 +92,7 @@ impl CustomModule {
             }
             ExecutionMode::Watch => {
                 self.poller_token.reset();
-                watchers::spawn_command_watcher(
-                    sender,
-                    &self.definition,
-                    self.watcher_token.reset(),
-                );
+                watchers::run_command_watcher(sender, &self.definition, self.watcher_token.reset());
             }
         }
     }
